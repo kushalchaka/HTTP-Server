@@ -2,14 +2,11 @@ import socket
 import sys
 import os
 
-# Configuration
 DOWNLOAD_DIR = 'Download'
 
-# Create Download directory if it doesn't exist
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def build_http_request(method, path, host, body=b''):
-    """Build an HTTP request."""
     request = f"{method} /{path} HTTP/1.1\r\n"
     request += f"Host: {host}\r\n"
     request += "User-Agent: PythonHTTPClient/1.0\r\n"
@@ -22,9 +19,7 @@ def build_http_request(method, path, host, body=b''):
     return request.encode() + body
 
 def parse_http_response(response_data):
-    """Parse HTTP response and return status, headers, and body."""
     try:
-        # Split headers and body
         header_end = response_data.index(b'\r\n\r\n')
         headers_part = response_data[:header_end].decode('utf-8', errors='ignore')
         body = response_data[header_end + 4:]
@@ -32,7 +27,6 @@ def parse_http_response(response_data):
         lines = headers_part.split('\r\n')
         status_line = lines[0]
 
-        # Parse status
         parts = status_line.split(' ', 2)
         if len(parts) >= 3:
             status_code = int(parts[1])
@@ -41,7 +35,6 @@ def parse_http_response(response_data):
             status_code = 0
             status_text = 'Unknown'
 
-        # Parse headers
         headers = {}
         for line in lines[1:]:
             if ':' in line:
@@ -54,15 +47,12 @@ def parse_http_response(response_data):
         return 0, 'Parse Error', {}, b''
 
 def send_request(host, port, method, filename, file_content=None):
-    """Send HTTP request to server."""
     try:
-        # Create socket and connect
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.settimeout(5.0)  # 5 second timeout
         client_socket.connect((host, port))
         print(f"[*] Connected to {host}:{port}")
 
-        # Build request
         if method in ['POST', 'PUT']:
             if file_content is None:
                 print(f"[-] Error: File content required for {method}")
@@ -71,11 +61,9 @@ def send_request(host, port, method, filename, file_content=None):
         else:
             request = build_http_request(method, filename, host)
 
-        # Send request
         client_socket.sendall(request)
         print(f"[*] Sent {method} request for /{filename}")
 
-        # Receive response
         response_data = b''
         content_length = None
         headers_received = False
@@ -87,19 +75,16 @@ def send_request(host, port, method, filename, file_content=None):
                     break
                 response_data += chunk
 
-                # Check if we've received headers
                 if not headers_received and b'\r\n\r\n' in response_data:
                     headers_received = True
                     header_end = response_data.index(b'\r\n\r\n')
                     headers_part = response_data[:header_end].decode('utf-8', errors='ignore')
 
-                    # Parse Content-Length
                     for line in headers_part.split('\r\n'):
                         if line.lower().startswith('content-length:'):
                             content_length = int(line.split(':')[1].strip())
                             break
 
-                # If we know the content length, check if we've received everything
                 if headers_received and content_length is not None:
                     header_end = response_data.index(b'\r\n\r\n')
                     body_received = len(response_data) - (header_end + 4)
@@ -107,15 +92,12 @@ def send_request(host, port, method, filename, file_content=None):
                         break
 
             except socket.timeout:
-                # Timeout means server is done sending
                 break
 
         client_socket.close()
 
-        # Parse response
         status_code, status_text, headers, body = parse_http_response(response_data)
 
-        # Print response
         print(f"\n[*] Response: {status_code} {status_text}")
         print("[*] Headers:")
         for key, value in headers.items():
@@ -134,11 +116,9 @@ def send_request(host, port, method, filename, file_content=None):
         return None, None, None, None
 
 def handle_get(host, port, filename):
-    """Handle GET request - download file."""
     status_code, status_text, headers, body = send_request(host, port, 'GET', filename)
 
     if status_code == 200:
-        # Save file to Download directory
         filepath = os.path.join(DOWNLOAD_DIR, os.path.basename(filename))
 
         try:
@@ -153,15 +133,12 @@ def handle_get(host, port, filename):
         print(body.decode('utf-8', errors='ignore'))
 
 def handle_head(host, port, filename):
-    """Handle HEAD request - get headers only."""
     status_code, status_text, headers, body = send_request(host, port, 'HEAD', filename)
 
     if body:
         print(f"\n[*] Note: Server sent {len(body)} bytes in body (should be empty for HEAD)")
 
 def handle_post(host, port, filename):
-    """Handle POST request - upload new file."""
-    # Read file from Download directory
     filepath = os.path.join(DOWNLOAD_DIR, os.path.basename(filename))
 
     if not os.path.exists(filepath):
@@ -184,8 +161,6 @@ def handle_post(host, port, filename):
         print(f"[-] Error reading file: {e}")
 
 def handle_put(host, port, filename):
-    """Handle PUT request - update existing file."""
-    # Read file from Download directory
     filepath = os.path.join(DOWNLOAD_DIR, os.path.basename(filename))
 
     if not os.path.exists(filepath):
@@ -208,7 +183,6 @@ def handle_put(host, port, filename):
         print(f"[-] Error reading file: {e}")
 
 def print_usage():
-    """Print usage instructions."""
     print("Usage: python client.py <serverHost> <serverPort> <filename> <command> [options]")
     print("\nCommands:")
     print("  GET  - Download file from server to Download/")
@@ -223,7 +197,6 @@ def print_usage():
     print("  python client.py localhost 8080 test.txt GET -d 200  # DoS test with 200 requests")
 
 def dos_test(host, port, filename, count):
-    """Perform DoS test by sending multiple rapid requests."""
     print(f"[*] Starting DoS test: {count} rapid GET requests to {host}:{port}")
     print(f"[*] Target file: {filename}")
     print()
@@ -264,7 +237,6 @@ def dos_test(host, port, filename, count):
         print(f"    Status: No ban detected")
 
 def main():
-    """Main client function."""
     if len(sys.argv) < 5:
         print_usage()
         sys.exit(1)
@@ -279,7 +251,6 @@ def main():
     filename = sys.argv[3]
     command = sys.argv[4].upper()
 
-    # Check for DoS test mode
     dos_mode = False
     dos_count = 0
     if len(sys.argv) >= 7 and sys.argv[5] == '-d':
