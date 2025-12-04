@@ -51,18 +51,18 @@ def send_request(host, port, method, filename, file_content=None):
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.settimeout(5.0)  # 5 second timeout
         client_socket.connect((host, port))
-        print(f"[*] Connected to {host}:{port}")
+        print(f"Connected to {host}:{port}")
 
         if method in ['POST', 'PUT']:
             if file_content is None:
-                print(f"[-] Error: File content required for {method}")
+                print(f"Error: File content required for {method}")
                 return
             request = build_http_request(method, filename, host, body=file_content)
         else:
             request = build_http_request(method, filename, host)
 
         client_socket.sendall(request)
-        print(f"[*] Sent {method} request for /{filename}")
+        print(f"Sent {method} request for /{filename}")
 
         response_data = b''
         content_length = None
@@ -98,21 +98,21 @@ def send_request(host, port, method, filename, file_content=None):
 
         status_code, status_text, headers, body = parse_http_response(response_data)
 
-        print(f"\n[*] Response: {status_code} {status_text}")
-        print("[*] Headers:")
+        print(f"\nResponse: {status_code} {status_text}")
+        print("Headers:")
         for key, value in headers.items():
             print(f"    {key}: {value}")
 
         return status_code, status_text, headers, body
 
     except ConnectionRefusedError:
-        print(f"[-] Error: Connection refused. Is the server running on {host}:{port}?")
+        print(f"Error: Connection refused. Is the server running on {host}:{port}?")
         return None, None, None, None
     except socket.timeout:
-        print(f"[-] Error: Connection timed out")
+        print(f"Error: Connection timed out")
         return None, None, None, None
     except Exception as e:
-        print(f"[-] Error: {e}")
+        print(f"Error: {e}")
         return None, None, None, None
 
 def handle_get(host, port, filename):
@@ -124,63 +124,63 @@ def handle_get(host, port, filename):
         try:
             with open(filepath, 'wb') as f:
                 f.write(body)
-            print(f"\n[+] File saved to: {filepath}")
-            print(f"[+] Size: {len(body)} bytes")
+            print(f"\nFile saved to: {filepath}")
+            print(f"Size: {len(body)} bytes")
         except Exception as e:
-            print(f"[-] Error saving file: {e}")
+            print(f"Error saving file: {e}")
     else:
-        print(f"\n[*] Response body:")
+        print(f"\nResponse body:")
         print(body.decode('utf-8', errors='ignore'))
 
 def handle_head(host, port, filename):
     status_code, status_text, headers, body = send_request(host, port, 'HEAD', filename)
 
     if body:
-        print(f"\n[*] Note: Server sent {len(body)} bytes in body (should be empty for HEAD)")
+        print(f"\nNote: Server sent {len(body)} bytes in body (should be empty for HEAD)")
 
 def handle_post(host, port, filename):
     filepath = os.path.join(DOWNLOAD_DIR, os.path.basename(filename))
 
     if not os.path.exists(filepath):
-        print(f"[-] Error: File not found: {filepath}")
+        print(f"Error: File not found: {filepath}")
         return
 
     try:
         with open(filepath, 'rb') as f:
             file_content = f.read()
 
-        print(f"[*] Uploading file: {filepath} ({len(file_content)} bytes)")
+        print(f"Uploading file: {filepath} ({len(file_content)} bytes)")
         status_code, status_text, headers, body = send_request(host, port, 'POST',
                                                                filename, file_content)
 
         if body:
-            print(f"\n[*] Response body:")
+            print(f"\nResponse body:")
             print(body.decode('utf-8', errors='ignore'))
 
     except Exception as e:
-        print(f"[-] Error reading file: {e}")
+        print(f"Error reading file: {e}")
 
 def handle_put(host, port, filename):
     filepath = os.path.join(DOWNLOAD_DIR, os.path.basename(filename))
 
     if not os.path.exists(filepath):
-        print(f"[-] Error: File not found: {filepath}")
+        print(f"Error: File not found: {filepath}")
         return
 
     try:
         with open(filepath, 'rb') as f:
             file_content = f.read()
 
-        print(f"[*] Updating file: {filepath} ({len(file_content)} bytes)")
+        print(f"Updating file: {filepath} ({len(file_content)} bytes)")
         status_code, status_text, headers, body = send_request(host, port, 'PUT',
                                                                filename, file_content)
 
         if body:
-            print(f"\n[*] Response body:")
+            print(f"\nResponse body:")
             print(body.decode('utf-8', errors='ignore'))
 
     except Exception as e:
-        print(f"[-] Error reading file: {e}")
+        print(f"Error reading file: {e}")
 
 def print_usage():
     print("Usage: python client.py <serverHost> <serverPort> <filename> <command> [options]")
@@ -197,8 +197,8 @@ def print_usage():
     print("  python client.py localhost 8080 test.txt GET -d 200  # DoS test with 200 requests")
 
 def dos_test(host, port, filename, count):
-    print(f"[*] Starting DoS test: {count} rapid GET requests to {host}:{port}")
-    print(f"[*] Target file: {filename}")
+    print(f"Starting DoS test: {count} rapid GET requests to {host}:{port}")
+    print(f"Target file: {filename}")
     print()
 
     import time
@@ -225,7 +225,7 @@ def dos_test(host, port, filename, count):
     end_time = time.time()
     elapsed = end_time - start_time
 
-    print(f"\n[*] DoS Test Results:")
+    print(f"\nDoS Test Results:")
     print(f"    Total requests: {count}")
     print(f"    Successful: {success_count}")
     print(f"    Time elapsed: {elapsed:.2f} seconds")
@@ -245,7 +245,7 @@ def main():
     try:
         port = int(sys.argv[2])
     except ValueError:
-        print("[-] Error: Port must be a number")
+        print("Error: Port must be a number")
         sys.exit(1)
 
     filename = sys.argv[3]
@@ -258,17 +258,17 @@ def main():
         try:
             dos_count = int(sys.argv[6])
         except ValueError:
-            print("[-] Error: DoS count must be a number")
+            print("Error: DoS count must be a number")
             sys.exit(1)
 
     if dos_mode:
         dos_test(host, port, filename, dos_count)
         return
 
-    print(f"[*] Client starting...")
-    print(f"[*] Server: {host}:{port}")
-    print(f"[*] File: {filename}")
-    print(f"[*] Command: {command}")
+    print(f"Client starting...")
+    print(f"Server: {host}:{port}")
+    print(f"File: {filename}")
+    print(f"Command: {command}")
     print()
 
     if command == 'GET':
@@ -280,7 +280,7 @@ def main():
     elif command == 'PUT':
         handle_put(host, port, filename)
     else:
-        print(f"[-] Error: Unknown command '{command}'")
+        print(f"Error: Unknown command '{command}'")
         print_usage()
         sys.exit(1)
 

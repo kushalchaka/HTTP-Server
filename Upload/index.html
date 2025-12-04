@@ -149,7 +149,6 @@
         .btn-dos { background: #ef4444; }
         .btn-dos:hover:not(:disabled) { background: #dc2626; }
 
-
         .response-box {
             background: #f9fafb;
             border: 2px solid #e5e7eb;
@@ -184,6 +183,15 @@
         .warning-box strong {
             display: block;
             margin-bottom: 5px;
+        }
+
+        .success-box {
+            background: #d1fae5;
+            border: 2px solid #6ee7b7;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #065f46;
         }
 
         table {
@@ -228,28 +236,6 @@
             color: #6b7280;
         }
 
-        .instructions {
-            background: #f0f9ff;
-            border: 2px solid #bfdbfe;
-            border-radius: 5px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .instructions h3 {
-            color: #1e40af;
-            margin-bottom: 15px;
-        }
-
-        .instructions ol {
-            margin-left: 20px;
-        }
-
-        .instructions li {
-            margin-bottom: 8px;
-            color: #1e3a8a;
-        }
-
         code {
             background: #e0e7ff;
             padding: 2px 6px;
@@ -257,14 +243,16 @@
             font-family: 'Courier New', monospace;
             font-size: 13px;
         }
+
+        .status-200 { color: #10b981; }
+        .status-400 { color: #f59e0b; }
+        .status-500 { color: #ef4444; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header Card -->
         <div class="card">
-            <h1>🌐 HTTP/1.0 Server Web Application</h1>
-            <p class="subtitle">Test your custom HTTP server implementation</p>
+            <h1>HTTP/1.0 Server Web Application</h1>
 
             <div class="config-grid">
                 <div>
@@ -278,26 +266,24 @@
             </div>
         </div>
 
-        <!-- Tabs -->
         <div class="card">
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('operations')">📁 File Operations</button>
-                <button class="tab" onclick="switchTab('dos')">🛡️ DoS Testing</button>
-                <button class="tab" onclick="switchTab('visitors')">👥 Visitors</button>
+                <button class="tab active" onclick="switchTab('operations')">File Operations</button>
+                <button class="tab" onclick="switchTab('dos')">DoS Testing</button>
+                <button class="tab" onclick="switchTab('visitors')">Visitors</button>
             </div>
 
-            <!-- File Operations Tab -->
             <div id="operations" class="tab-content active">
                 <h2 style="margin-bottom: 20px;">HTTP Methods</h2>
 
                 <div style="margin-bottom: 15px;">
                     <label>Filename (path)</label>
-                    <input type="text" id="filename" placeholder="test.txt or subdir/file.dat">
+                    <input type="text" id="filename" placeholder="test.txt" value="test.txt">
                 </div>
 
                 <div style="margin-bottom: 15px;">
                     <label>File Content (for POST/PUT)</label>
-                    <textarea id="fileContent" rows="5" placeholder="Enter file content here..."></textarea>
+                    <textarea id="fileContent" rows="5" placeholder="Enter file content here...">Hello from the web interface!</textarea>
                 </div>
 
                 <div class="button-grid">
@@ -310,23 +296,23 @@
                 <div id="operationsResponse"></div>
             </div>
 
-            <!-- DoS Testing Tab -->
             <div id="dos" class="tab-content">
-                <h2 style="margin-bottom: 20px;">🛡️ DoS Protection Testing</h2>
+                <h2 style="margin-bottom: 20px;">DoS Protection Testing</h2>
 
                 <div class="warning-box">
-                    <strong>⚠️ Warning:</strong>
-                    This will send multiple rapid requests to test the server's DoS protection (100 requests/minute threshold).
+                    <strong>Warning:</strong>
+                    This will send multiple rapid requests to test the server's DoS protection (100 requests/60 seconds threshold).
+                    Your IP may be temporarily banned!
                 </div>
 
                 <div style="margin-bottom: 15px;">
                     <label>Filename to Request</label>
-                    <input type="text" id="dosFilename" placeholder="test.txt">
+                    <input type="text" id="dosFilename" placeholder="test.txt" value="test.txt">
                 </div>
 
                 <div style="margin-bottom: 15px;">
                     <label>Number of Requests</label>
-                    <input type="number" id="dosCount" value="150">
+                    <input type="number" id="dosCount" value="150" min="1" max="500">
                 </div>
 
                 <button class="btn-dos" onclick="dosTest()" style="width: 100%; margin-bottom: 20px;">Start DoS Test</button>
@@ -334,32 +320,18 @@
                 <div id="dosResponse"></div>
             </div>
 
-            <!-- Visitors Tab -->
             <div id="visitors" class="tab-content">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>👥 Visitor Tracking</h2>
+                    <h2>Visitor Tracking</h2>
                 </div>
 
                 <div id="visitorsTable"></div>
             </div>
         </div>
-
-        <!-- Instructions -->
-        <div class="card instructions">
-            <h3>📚 Quick Start Guide</h3>
-            <ol>
-                <li>Start your server: <code>python server.py 8080</code></li>
-                <li>Create a test file in the Upload/ directory</li>
-                <li>Use the <strong>File Operations</strong> tab to test GET, HEAD, POST, PUT methods</li>
-                <li>Use the <strong>DoS Testing</strong> tab to verify protection (threshold: 100 req/min)</li>
-                <li>Check the <strong>Visitors</strong> tab to see cookie-based tracking</li>
-            </ol>
-        </div>
     </div>
 
     <script>
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -367,11 +339,9 @@
                 tab.classList.remove('active');
             });
 
-            // Show selected tab
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
 
-            // Load visitors if that tab is selected
             if (tabName === 'visitors') {
                 loadVisitors();
             }
@@ -385,54 +355,84 @@
             const responseDiv = document.getElementById('operationsResponse');
 
             if (!filename) {
-                showResponse(responseDiv, 'Error: Please enter a filename');
+                showResponse(responseDiv, 'Error: Please enter a filename', 'error');
                 return;
             }
 
-            showResponse(responseDiv, `Sending ${method} request...`);
+            // For GET, use the special /download/ endpoint to save to server's Download/ folder
+            let url = `http://${host}:${port}/${filename}`;
+            let actualMethod = method;
+
+            if (method === 'GET') {
+                url = `http://${host}:${port}/download/${filename}`;
+                actualMethod = 'POST'; // Use POST to trigger server-side download
+                showResponse(responseDiv, `Downloading ${filename} to server's Download/ folder...`, 'loading');
+            } else {
+                showResponse(responseDiv, `Sending ${method} request to /${filename}...`, 'loading');
+            }
 
             try {
-                const url = `http://${host}:${port}/${filename}`;
                 const options = {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/octet-stream',
-                    },
+                    method: actualMethod,
+                    mode: 'cors',
+                    credentials: 'include',
                 };
 
-                if ((method === 'POST' || method === 'PUT') && fileContent) {
+                if ((actualMethod === 'POST' || actualMethod === 'PUT') && method !== 'GET') {
+                    if (!fileContent) {
+                        showResponse(responseDiv, `Error: Please enter file content for ${method}`, 'error');
+                        return;
+                    }
+                    options.headers = {
+                        'Content-Type': 'application/octet-stream',
+                    };
                     options.body = fileContent;
-                } else if ((method === 'POST' || method === 'PUT') && !fileContent) {
-                    showResponse(responseDiv, 'Error: Please enter file content for POST/PUT');
-                    return;
                 }
 
                 const response = await fetch(url, options);
-                const data = await response.text();
 
-                let headers = '';
+                let data;
+                try {
+                    data = await response.text();
+                } catch (e) {
+                    data = '(Unable to read response body)';
+                }
+
+                let statusClass = 'status-200';
+                if (response.status >= 400 && response.status < 500) statusClass = 'status-400';
+                if (response.status >= 500) statusClass = 'status-500';
+
+                let headersText = '';
                 response.headers.forEach((value, key) => {
-                    headers += `${key}: ${value}\n`;
+                    headersText += `${key}: ${value}\n`;
                 });
 
-                const output = `Status: ${response.status} ${response.statusText}\n\n` +
-                               `Headers:\n${headers}\n` +
-                               `Body:\n${data}`;
+                const output = `<span class="${statusClass}"><strong>Status:</strong> ${response.status} ${response.statusText}</span>\n\n` +
+                               `<strong>Headers:</strong>\n${headersText}\n` +
+                               `<strong>Body:</strong>\n${data || '(empty)'}`;
 
-                // Check for cookie
-                const cookie = response.headers.get('set-cookie');
-                if (cookie) {
-                    const match = cookie.match(/visit_count=(\d+)/);
-                    if (match) {
-                        showResponse(responseDiv, output + `\n\n✓ Visit Count: ${match[1]}`);
-                        return;
+                const setCookie = response.headers.get('set-cookie');
+                let cookieInfo = '';
+                if (setCookie) {
+                    const visitMatch = setCookie.match(/visit_count=(\d+)/);
+                    const ipMatch = setCookie.match(/visitor_id=([^;]+)/);
+                    if (visitMatch || ipMatch) {
+                        cookieInfo = `\n\n<strong>Visitor Info:</strong>\n`;
+                        if (ipMatch) cookieInfo += `IP: ${ipMatch[1]}\n`;
+                        if (visitMatch) cookieInfo += `Visit Count: ${visitMatch[1]}`;
                     }
                 }
 
-                showResponse(responseDiv, output);
+                showResponse(responseDiv, output + cookieInfo, response.ok ? 'success' : 'error');
 
             } catch (error) {
-                showResponse(responseDiv, `Error: ${error.message}\n\nMake sure the server is running on ${host}:${port}`);
+                showResponse(responseDiv,
+                    `<strong>Error:</strong> ${error.message}\n\n` +
+                    `Make sure:\n` +
+                    `• The server is running on ${host}:${port}\n` +
+                    `• CORS is enabled (it should be by default)\n` +
+                    `• The file exists (for GET/HEAD requests)`,
+                    'error');
             }
         }
 
@@ -444,46 +444,70 @@
             const responseDiv = document.getElementById('dosResponse');
 
             if (!filename) {
-                showResponse(responseDiv, 'Error: Please enter a filename');
+                showResponse(responseDiv, 'Error: Please enter a filename', 'error');
                 return;
             }
 
-            showResponse(responseDiv, 'Starting DoS test...\n\n');
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Testing in progress...';
+
+            showResponse(responseDiv, `Starting DoS test with ${count} requests...\n`, 'loading');
 
             let successCount = 0;
             let bannedCount = 0;
+            let errorCount = 0;
             const startTime = Date.now();
+            let isBanned = false;
 
             for (let i = 0; i < count; i++) {
                 try {
                     const url = `http://${host}:${port}/${filename}`;
-                    const response = await fetch(url);
+                    const response = await fetch(url, { mode: 'cors' });
 
                     if (response.status === 200) {
                         successCount++;
                     } else if (response.status === 429) {
                         bannedCount++;
-                        appendResponse(responseDiv, `\nRequest ${i + 1}: BANNED (429 Too Many Requests)`);
+                        isBanned = true;
+                        appendResponse(responseDiv, `\nRequest ${i + 1}: BANNED! (429 Too Many Requests)`);
+                        appendResponse(responseDiv, `\nDoS protection triggered. Stopping test.`);
                         break;
+                    } else {
+                        errorCount++;
                     }
 
-                    if (i % 10 === 0) {
-                        appendResponse(responseDiv, `\nRequest ${i + 1}/${count}: ${response.status} ${response.statusText}`);
+                    if (i % 10 === 0 || i === count - 1) {
+                        appendResponse(responseDiv, `\nRequest ${i + 1}/${count}: ${response.status}`);
                     }
                 } catch (error) {
-                    appendResponse(responseDiv, `\nRequest ${i + 1}: Error - ${error.message}`);
+                    errorCount++;
+                    if (i % 10 === 0) {
+                        appendResponse(responseDiv, `\nRequest ${i + 1}: ${error.message}`);
+                    }
+                }
+
+                if (i % 50 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
                 }
             }
 
             const elapsed = (Date.now() - startTime) / 1000;
-            const results = `\n\n=== DoS Test Results ===\n` +
-                          `Total Requests: ${count}\n` +
+            const results = `\n\n${'='.repeat(40)}\n` +
+                          `<strong>DoS Test Results</strong>\n` +
+                          `${'='.repeat(40)}\n` +
+                          `Total Requests: ${successCount + bannedCount + errorCount}\n` +
                           `Successful: ${successCount}\n` +
-                          `Banned: ${bannedCount > 0 ? 'YES' : 'NO'}\n` +
-                          `Time: ${elapsed.toFixed(2)}s\n` +
-                          `Rate: ${(count / elapsed).toFixed(2)} req/s`;
+                          `Banned: ${isBanned ? 'YES (after ' + (successCount + bannedCount) + ' requests)' : 'NO'}\n` +
+                          `Errors: ${errorCount}\n` +
+                          `Time: ${elapsed.toFixed(2)} seconds\n` +
+                          `Rate: ${((successCount + bannedCount + errorCount) / elapsed).toFixed(2)} req/s\n` +
+                          `${'='.repeat(40)}`;
 
             appendResponse(responseDiv, results);
+
+            button.disabled = false;
+            button.textContent = 'Start DoS Test';
         }
 
         async function loadVisitors() {
@@ -491,52 +515,79 @@
             const port = document.getElementById('serverPort').value;
             const tableDiv = document.getElementById('visitorsTable');
 
+            tableDiv.innerHTML = '<div class="empty-state">Loading visitors...</div>';
+
             try {
-                const response = await fetch(`http://${host}:${port}/visitors.json`);
+                const response = await fetch(`http://${host}:${port}/visitors.json`, {
+                    mode: 'cors'
+                });
 
                 if (!response.ok) {
-                    tableDiv.innerHTML = '<div class="empty-state">⚠️ No visitor data available<br><small>Make some requests first or check if visitors.json exists</small></div>';
+                    tableDiv.innerHTML = '<div class="empty-state">No visitor data available<br><small>Make some requests first or check if visitors.json exists in Upload/</small></div>';
                     return;
                 }
 
                 const visitors = await response.json();
 
                 if (Object.keys(visitors).length === 0) {
-                    tableDiv.innerHTML = '<div class="empty-state">📭 No visitors yet</div>';
+                    tableDiv.innerHTML = '<div class="empty-state">No visitors yet</div>';
                     return;
                 }
 
                 let html = '<table><thead><tr><th>IP Address</th><th>Visit Count</th><th>First Visit</th><th>Last Visit</th></tr></thead><tbody>';
 
-                for (const [ip, data] of Object.entries(visitors)) {
+                const sortedVisitors = Object.entries(visitors).sort((a, b) => b[1].count - a[1].count);
+
+                for (const [ip, data] of sortedVisitors) {
                     html += `<tr>
                         <td><code>${ip}</code></td>
-                        <td><span class="badge">${data.count} visits</span></td>
+                        <td><span class="badge">${data.count} visit${data.count > 1 ? 's' : ''}</span></td>
                         <td>${data.first_visit}</td>
                         <td>${data.last_visit}</td>
                     </tr>`;
                 }
 
                 html += '</tbody></table>';
+                html += `<div style="margin-top: 15px; color: #666; font-size: 14px;">Total unique visitors: ${sortedVisitors.length}</div>`;
                 tableDiv.innerHTML = html;
 
             } catch (error) {
-                tableDiv.innerHTML = `<div class="empty-state">❌ Error loading visitors: ${error.message}</div>`;
+                tableDiv.innerHTML = `<div class="empty-state">Error loading visitors: ${error.message}<br><small>Make sure the server is running and visitors.json is in the Upload/ directory</small></div>`;
             }
         }
 
-        function showResponse(element, text) {
-            element.innerHTML = `<div class="response-box"><h3>Response:</h3><pre>${text}</pre></div>`;
+        function showResponse(element, text, type = 'info') {
+            let className = 'response-box';
+            let icon = 'Info';
+
+            if (type === 'success') {
+                className += ' success-box';
+                icon = 'Success';
+            } else if (type === 'error') {
+                className += ' warning-box';
+                icon = 'Error';
+            } else if (type === 'loading') {
+                icon = 'Loading';
+            }
+
+            element.innerHTML = `<div class="${className}"><h3>${icon}:</h3><pre>${text}</pre></div>`;
         }
 
         function appendResponse(element, text) {
             const pre = element.querySelector('pre');
             if (pre) {
-                pre.textContent += text;
+                pre.innerHTML += text;
+                // Auto-scroll to bottom
+                pre.scrollTop = pre.scrollHeight;
             } else {
                 showResponse(element, text);
             }
         }
+
+        window.addEventListener('load', () => {
+            console.log('HTTP Server Web App loaded');
+            console.log('Make sure your server.py is running!');
+        });
     </script>
 </body>
 </html>

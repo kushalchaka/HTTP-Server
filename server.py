@@ -8,6 +8,7 @@ from datetime import datetime
 HOST = '0.0.0.0'
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 UPLOAD_DIR = 'Upload'
+DOWNLOAD_DIR = 'Download'
 VISITORS_FILE = 'Upload/visitors.json'
 DOS_THRESHOLD = 100
 DOS_WINDOW = 60
@@ -18,6 +19,7 @@ visitors = {}
 request_tracker = {}
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 def load_visitors():
     global visitors
@@ -138,6 +140,27 @@ def build_http_response(status_code, status_text, headers=None, body=b'', ip=Non
     return response.encode() + body
 
 def handle_get(path, include_body=True, ip=None):
+    if path == '/' or path == '':
+        if os.path.exists('index.html'):
+            try:
+                with open('index.html', 'rb') as f:
+                    content = f.read()
+
+                headers = {
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Cache-Control': 'no-cache',
+                }
+
+                if include_body:
+                    return build_http_response(200, 'OK', headers=headers, body=content, ip=ip)
+                else:
+                    return build_http_response(200, 'OK', headers=headers, body=b'', ip=ip)
+            except Exception as e:
+                return build_http_response(500, 'Internal Server Error',
+                                          body=f'500 Internal Server Error: {str(e)}'.encode(), ip=ip)
+        else:
+            return build_http_response(404, 'Not Found', body=b'404 Not Found - index.html not found', ip=ip)
+
     filepath = os.path.join(UPLOAD_DIR, path.lstrip('/'))
 
     if '..' in filepath or not filepath.startswith(UPLOAD_DIR):
@@ -224,6 +247,34 @@ def handle_put(path, body, ip=None):
         return build_http_response(500, 'Internal Server Error',
                                   body=f'500 Internal Server Error: {str(e)}'.encode(), ip=ip)
 
+def handle_download(path, ip=None):
+    source_path = os.path.join(UPLOAD_DIR, path.lstrip('/'))
+    dest_path = os.path.join(DOWNLOAD_DIR, os.path.basename(path.lstrip('/')))
+
+    if '..' in source_path or not source_path.startswith(UPLOAD_DIR):
+        return build_http_response(403, 'Forbidden', body=b'403 Forbidden', ip=ip)
+
+    if not os.path.exists(source_path):
+        return build_http_response(404, 'Not Found', body=b'404 Not Found - Source file does not exist', ip=ip)
+
+    if not os.path.isfile(source_path):
+        return build_http_response(403, 'Forbidden', body=b'403 Forbidden - Not a file', ip=ip)
+
+    try:
+        with open(source_path, 'rb') as f:
+            content = f.read()
+
+        with open(dest_path, 'wb') as f:
+            f.write(content)
+
+        message = f'File downloaded successfully from {path} to Download/{os.path.basename(dest_path)} ({len(content)} bytes)'
+        return build_http_response(200, 'OK', body=message.encode(), ip=ip)
+    except PermissionError:
+        return build_http_response(403, 'Forbidden', body=b'403 Forbidden - Permission denied', ip=ip)
+    except Exception as e:
+        return build_http_response(500, 'Internal Server Error',
+                                  body=f'500 Internal Server Error: {str(e)}'.encode(), ip=ip)
+
 def handle_client(client_socket, addr):
     ip = addr[0]
     print(f"Connection from {ip}:{addr[1]}")
@@ -303,13 +354,17 @@ def handle_client(client_socket, addr):
         elif method == 'HEAD':
             response = handle_get(path, include_body=False, ip=ip)
         elif method == 'POST':
-            response = handle_post(path, body, ip=ip)
+            # Check if this is a download request
+            if path.startswith('/download/'):
+                actual_path = path.replace('/download/', '/', 1)
+                response = handle_download(actual_path, ip=ip)
+            else:
+                response = handle_post(path, body, ip=ip)
         elif method == 'PUT':
             response = handle_put(path, body, ip=ip)
         else:
             response = build_http_response(405, 'Method Not Allowed',
                                           body=b'405 Method Not Allowed', ip=ip)
-
 
         client_socket.sendall(response)
 
